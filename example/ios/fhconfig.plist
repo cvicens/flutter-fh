@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>host</key>
+	<string>https://cvicensa.us.demos.redhatmobile.com</string>
+	<key>appid</key>
+	<string>y2b4ewqwtoazcxi6su3agwru</string>
+	<key>projectid</key>
+	<string>y2b4ewrzaufvvrz57wjdm5ig</string>
+	<key>appkey</key>
+	<string>f87962761a79177912ec35f02d4592c414082d9a</string>
+	<key>connectiontag</key>
+	<string>0.0.1</string>
+</dict>
+</plist>

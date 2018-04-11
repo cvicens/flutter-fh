@@ -1,0 +1,31 @@
+PODS:
+  - AeroGear-Push (1.2.0)
+  - FH (3.1.1):
+    - AeroGear-Push (= 1.2.0)
+    - Reachability (= 3.2)
+  - fh_sdk (0.0.1):
+    - FH (~> 3.1.1)
+    - Flutter
+  - Flutter (1.0.0)
+  - Reachability (3.2)
+
+DEPENDENCIES:
+  - fh_sdk (from `Pods/.symlinks/plugins/fh_sdk/ios`)
+  - Flutter (from `Pods/.symlinks/flutter/ios`)
+
+EXTERNAL SOURCES:
+  fh_sdk:
+    :path: Pods/.symlinks/plugins/fh_sdk/ios
+  Flutter:
+    :path: Pods/.symlinks/flutter/ios
+
+SPEC CHECKSUMS:
+  AeroGear-Push: 8f658e29bf55b4a8b09da014715028e0abdd3044
+  FH: 33353448996384a4c05626b8a42ac7ebee75bdc5
+  fh_sdk: 329ff3e7fe7662bb267e260028bc3d3d5f483a8b
+  Flutter: 9d0fac939486c9aba2809b7982dfdbb47a7b0296
+  Reachability: 33e18b67625424e47b6cde6d202dce689ad7af96
+
+PODFILE CHECKSUM: 0420ab312a523ae0eecfb1fc19ea51dd82cc17c7
+
+COCOAPODS: 1.4.0
