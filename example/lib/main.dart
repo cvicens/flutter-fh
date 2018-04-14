@@ -105,7 +105,7 @@ class _MyAppState extends State<MyApp> {
 
     try {
       Map options = {
-        "path": "/hello?hello=" + hello,
+        "path": "/hello?hello=" + hello.replaceAll(' ', ''),
         "method": "GET",
         "contentType": "application/json",
         "timeout": 25000 // timeout value specified in milliseconds. Default: 60000 (60s)
@@ -204,7 +204,7 @@ class _MyAppState extends State<MyApp> {
             new Container(
               padding: const EdgeInsets.all(32.0),
               child: new RaisedButton(
-                child: const Text('Say Hello'),
+                child: new Text(_FhInit ? 'Say Hello' : 'Init in progress...'),
                 color: Theme.of(context).primaryColor,
                 textColor: Colors.white,
                 onPressed: !_FhInit ? null : () {
