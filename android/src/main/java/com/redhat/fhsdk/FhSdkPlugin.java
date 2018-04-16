@@ -44,11 +44,8 @@ public class FhSdkPlugin implements MethodCallHandler {
 
     @Override
     public void onMethodCall(MethodCall call, Result result) {
-        if (call.method.equals("getPlatformVersion")) {
-            result.success("Android " + android.os.Build.VERSION.RELEASE);
-        }
         // FH.init()
-        else if (call.method.equals("init")) {
+        if (call.method.equals("init")) {
             this.handleInitCall(result);
         }
         // FH.cloudHost()

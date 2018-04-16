@@ -6,13 +6,14 @@ import 'package:flutter/services.dart';
 class FhSdk {
   static const MethodChannel _channel = const MethodChannel('fh_sdk');
 
-  static Future<String> get platformVersion => _channel.invokeMethod('getPlatformVersion');
-
+  // This method initializes the FH SDK
   static Future<String> init () => _channel.invokeMethod('init');
 
+  // This function returns the actual Cloud App URL associated with the connection tag
   static Future<String> getCloudUrl () => _channel.invokeMethod('getCloudUrl');
 
-  // This function returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
+  // This function invokes a REST endpoint exposed in the Cloud App. Receives a Map of options: path, data, etc.
+  // Returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
   static Future<dynamic> cloud (Map<String, String> options, [bool raw = false]) {
     Completer completer = new Completer();
     _channel.invokeMethod('cloud', options).then((stringData) {
@@ -26,11 +27,9 @@ class FhSdk {
     return completer.future;
   }
 
-  static Future<Map> authOld (String authPolicy, String username, String password) => _channel.invokeMethod('auth', {'authPolicy': authPolicy, 'username': username, 'password': password});
-
+  // This function invokes an authentication policy given the policy name, username and password.
+  // Returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
   static Future<dynamic> auth (String authPolicy, String username, String password, [bool raw = false]) { 
-    _channel.invokeMethod('auth', {'authPolicy': authPolicy, 'username': username, 'password': password});
-
     Completer completer = new Completer();
     _channel.invokeMethod('auth', {'authPolicy': authPolicy, 'username': username, 'password': password}).then((stringData) {
       if (raw) {
@@ -42,6 +41,4 @@ class FhSdk {
 
     return completer.future;
   }
-
-  static Future<String> getClourUrl () => _channel.invokeMethod('getCloudUrl');
 }

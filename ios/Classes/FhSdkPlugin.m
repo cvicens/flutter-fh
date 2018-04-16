@@ -15,12 +15,8 @@
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
-  // Get platform version
-  if ([@"getPlatformVersion" isEqualToString:call.method]) {
-    result([@"iOS " stringByAppendingString: [[UIDevice currentDevice] systemVersion]]);
-  } 
   // FH.init()
-  else if ([@"init" isEqualToString:call.method]) {
+  if ([@"init" isEqualToString:call.method]) {
     [self handleInitCall: result];
   }
   // FH.cloudHost()
