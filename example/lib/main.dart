@@ -36,7 +36,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  bool _FhInit = false;
+  bool _fhInit = false;
   String _messages = 'No messages';
 
   @override
@@ -91,7 +91,31 @@ class _MyAppState extends State<MyApp> {
       return;
 
     setState(() {
-      _FhInit = result != null && result.contains('SUCCESS') ? true : false;
+      _fhInit = result != null && result.contains('SUCCESS') ? true : false;
+      _messages = message;
+    });
+  }
+
+  // Platform messages are asynchronous, so we initialize in an async method.
+  getCloudUrl() async {
+    String result;
+    String message;
+
+    try {
+      result = await FhSdk.getCloudUrl();
+      print('cloudHost' + result);
+      message = result.toString();
+    } on PlatformException catch (e) {
+      message = 'Error in FH getCloudUrl $e';
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted)
+      return;
+
+    setState(() {
       _messages = message;
     });
   }
@@ -106,7 +130,6 @@ class _MyAppState extends State<MyApp> {
     try {
       Map options = {
         "path": "/hello?hello=" + hello.replaceAll(' ', ''),
-        //"path": "/events/SPAIN/MADRID",
         "method": "GET",
         "contentType": "application/json",
         "timeout": 25000 // timeout value specified in milliseconds. Default: 60000 (60s)
@@ -133,14 +156,13 @@ class _MyAppState extends State<MyApp> {
 
   // Authentication test
   auth(String authPolicy, String username, String password) async {
-    Map data;
+    dynamic data;
     String message;
 
     try {
-     
       data = await FhSdk.auth(authPolicy, username, password);
       message = data['message'];
-      print('data' + data['message']);
+      print('auth data' + data['message']);
     } on PlatformException catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
@@ -195,9 +217,6 @@ class _MyAppState extends State<MyApp> {
         body: new ListView(
           children: [ 
             titleSection,
-            //const Divider(
-            //  height: 1.0,
-            //),
             formSection,
             const Divider(
               height: 1.0,
@@ -205,12 +224,25 @@ class _MyAppState extends State<MyApp> {
             new Container(
               padding: const EdgeInsets.all(32.0),
               child: new RaisedButton(
-                child: new Text(_FhInit ? 'Say Hello' : 'Init in progress...'),
+                child: new Text(_fhInit ? 'Say Hello' : 'Init in progress...'),
                 color: Theme.of(context).primaryColor,
                 textColor: Colors.white,
-                onPressed: !_FhInit ? null : () {
+                onPressed: !_fhInit ? null : () {
                   // Perform some action
                   sayHello(_controller.text);
+                }
+              )
+            ),
+             new Container(
+              padding: const EdgeInsets.all(32.0),
+              child: new RaisedButton(
+                child: new Text(_fhInit ? 'Test auth' : 'Init in progress...'),
+                color: Theme.of(context).primaryColor,
+                textColor: Colors.white,
+                onPressed: !_fhInit ? null : () {
+                  // Perform some action
+                  auth('popagame', 'trever', '123');
+                  getCloudUrl();
                 }
               )
             ),

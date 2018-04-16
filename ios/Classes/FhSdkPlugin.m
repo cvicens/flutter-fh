@@ -22,7 +22,11 @@
   // FH.init()
   else if ([@"init" isEqualToString:call.method]) {
     [self handleInitCall: result];
-  } 
+  }
+  // FH.cloudHost()
+  else if ([@"getCloudUrl" isEqualToString:call.method]) {
+      [self handleGetCloudUrlCall: result];
+  }
   // FH.cloud()
   else if ([@"cloud" isEqualToString:call.method]) {
     [self handleCloudCall: call result: result];
@@ -223,10 +227,80 @@
     // Call a cloud side function when init finishes
     void (^success)(FHResponse *)=^(FHResponse * res) {
         NSLog(@"auth call succeded check status");
+        NSLog(@"parsed response %@ type=%@",res.parsedResponse,[res.parsedResponse class]);
+        if ([res responseStatusCode] != 200) {
+            NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                     [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
+                                     res.rawResponseAsString, @"rawResponseAsString", nil];
+            NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
+            NSLog(@"auth call authentication failed. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+            result([FlutterError errorWithCode:@"AUTH_ERROR"
+                                       message:errorMessage
+                                       details:details]);
+            
+        } else {
+            NSLog(@"auth call authentication succeded");
+            result(res.rawResponseAsString);
+        }
+    };
+    
+    void (^failure)(id)=^(FHResponse * res){
+        NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
+                                 [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
+                                 res.rawResponseAsString, @"rawResponseAsString", nil];
+        NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
+        NSLog(@"init call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+        result([FlutterError errorWithCode:@"AUTH_ERROR"
+                                   message:errorMessage
+                                   details:details]);
+    };
+    
+    @try {
+        
+        if (!authPolicy || !username || !password) {
+            NSString *errorMessage = [NSString stringWithFormat:@"Error authPolicy, username, password cannot empty"];
+            result([FlutterError errorWithCode:@"AUTH_ERROR"
+                                       message:errorMessage
+                                       details:nil]);
+            return;
+        }
+        
+        
+        NSLog(@"Policy: %@ username: %@", authPolicy, username);
+        
+        
+        FHAuthRequest* authRequest = [FH buildAuthRequest];
+        [authRequest authWithPolicyId:authPolicy UserId:username Password:password];
+        
+        [authRequest execAsyncWithSuccess:success AndFailure:failure];
+    }
+    @catch ( NSException *e ) {
+        NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", [e reason]];
+        NSLog(@"cloud call exception. Response = %@", errorMessage);
+        result([FlutterError errorWithCode:@"AUTH_ERROR"
+                                   message:errorMessage
+                                   details:nil]);
+        
+    }
+    @finally {
+        NSLog(@"finally area reached");
+    }
+}
+
+-(void)handleAuthCallParsed: (FlutterMethodCall*)call result:(FlutterResult)result {
+    NSLog(@"auth call with promise %@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    NSDictionary *options = call.arguments;
+    
+    NSString *authPolicy = [options valueForKey:@"authPolicy"];
+    NSString *username = [options valueForKey:@"username"];
+    NSString *password = [options valueForKey:@"password"];
+    
+    // Call a cloud side function when init finishes
+    void (^success)(FHResponse *)=^(FHResponse * res) {
+        NSLog(@"auth call succeded check status");
         NSDictionary *resData = res.parsedResponse;
         
         NSLog(@"parsed response %@ type=%@",res.parsedResponse,[res.parsedResponse class]);
-        //if ([[[res parsedResponse] valueForKey:@"status"] isEqualToString:@"error"]) {
         if ([res responseStatusCode] != 200) {
             NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
                                      [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
