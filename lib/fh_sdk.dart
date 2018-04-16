@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
@@ -9,7 +10,19 @@ class FhSdk {
 
   static Future<String> init () => _channel.invokeMethod('init');
 
-  static Future<Map> cloud (Map<String, String> options) => _channel.invokeMethod('cloud', options);
+  // This function returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
+  static Future<dynamic> cloud (Map<String, String> options, [bool raw = false]) {
+    Completer completer = new Completer();
+    _channel.invokeMethod('cloud', options).then((stringData) {
+      if (raw) {
+        completer.complete(stringData);
+      } else {
+        completer.complete(JSON.decode(stringData));
+      }
+    });
+
+    return completer.future;
+  }
 
   static Future<Map> auth (String authPolicy, String username, String password) => _channel.invokeMethod('auth', {'authPolicy': authPolicy, 'username': username, 'password': password});
 

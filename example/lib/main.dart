@@ -91,14 +91,14 @@ class _MyAppState extends State<MyApp> {
       return;
 
     setState(() {
-      _FhInit = result.contains('OK');
+      _FhInit = result != null && result.contains('SUCCESS') ? true : false;
       _messages = message;
     });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
   sayHello(String name) async {
-    Map data;
+    dynamic data;
     String message;
 
     String hello = (name == null || name.length <=0) ? 'world' : name;
@@ -106,13 +106,14 @@ class _MyAppState extends State<MyApp> {
     try {
       Map options = {
         "path": "/hello?hello=" + hello.replaceAll(' ', ''),
+        //"path": "/events/SPAIN/MADRID",
         "method": "GET",
         "contentType": "application/json",
         "timeout": 25000 // timeout value specified in milliseconds. Default: 60000 (60s)
       };
       data = await FhSdk.cloud(options);
+      print('data ==> ' + data.toString());
       message = data.toString();
-      print('data' + data.toString());
     } on PlatformException catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');

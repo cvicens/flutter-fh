@@ -44,7 +44,7 @@
   void (^success)(FHResponse *)=^(FHResponse * res) {
       // Initialisation is now complete, you can now make FHActRequest's
       NSLog(@"SDK init = OK");
-      result(@"SDK init = OK");
+      result(@"SUCCESS");
   };
   
   void (^failure)(id)=^(FHResponse * res){
@@ -87,9 +87,74 @@
   // Call a cloud side function when init finishes
   void (^success)(FHResponse *)=^(FHResponse * res) {
       NSLog(@"cloud call succeded");
-      NSDictionary *resData = res.parsedResponse;
+      result(res.rawResponseAsString);
+  };
+  
+  void (^failure)(id)=^(FHResponse * res){
+      NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
+                               [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
+                               res.rawResponseAsString, @"rawResponseAsString", nil];
+      NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
+      NSLog(@"init call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+      result([FlutterError errorWithCode:@"CLOUD_ERROR"
+                                 message:errorMessage
+                                 details:details]);
+  };
+  
+  @try {
+      NSString *path = nil, *method = nil, *contentType = nil;
+      NSNumber *timeout;
+      NSMutableDictionary *headers = [[NSMutableDictionary alloc] init];
+      NSMutableDictionary *data = [[NSMutableDictionary alloc] init];
+      if (options && [options valueForKey:@"path"]) path = [options valueForKey:@"path"];
+      if (options && [options valueForKey:@"method"]) method = [options valueForKey:@"method"];
+      if (options && [options valueForKey:@"contentType"]) {
+          contentType = [options valueForKey:@"contentType"];
+      } else {
+          contentType = @"application/json";
+      }
+      if (options && [options valueForKey:@"timeout"]) timeout = [options valueForKey:@"timeout"];
       
-      result(resData);
+      if (options && [options valueForKey:@"headers"]) {
+          [headers addEntriesFromDictionary: (NSDictionary*)[options valueForKey:@"headers"]];
+      }
+      [headers setValue:contentType forKey:@"contentType"];
+      
+      if (options && [options valueForKey:@"data"]) {
+          [data addEntriesFromDictionary: (NSDictionary*)[options valueForKey:@"data"]];
+      }
+      
+      FHCloudRequest * action = (FHCloudRequest *) [FH buildCloudRequest:path
+                                                              WithMethod:method
+                                                              AndHeaders:headers
+                                                                  AndArgs:data];
+      
+      // change timeout (default value: 60s)
+      action.requestTimeout = 25.0;
+      [action execAsyncWithSuccess: success AndFailure: failure];
+  }
+  @catch ( NSException *e ) {
+      NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", [e reason]];
+      NSLog(@"cloud call exception. Response = %@", errorMessage);
+      result([FlutterError errorWithCode:@"CLOUD_ERROR"
+                                message:errorMessage
+                                details:nil]);
+  }
+  @finally {
+      NSLog(@"finally area reached");
+  }
+}
+
+-(void)handleCloudCallParsed: (FlutterMethodCall*)call result:(FlutterResult)result {
+  NSDictionary *options = call.arguments;
+    
+  NSLog(@"%@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+  NSLog(@"options: %@", options);
+  
+  // Call a cloud side function when init finishes
+  void (^success)(FHResponse *)=^(FHResponse * res) {
+      NSLog(@"cloud call succeded");
+      result(res.parsedResponse);
   };
   
   void (^failure)(id)=^(FHResponse * res){
