@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+   pushconfig.plist
+   Runner
+
+   Created by Carlos Vicens on 17/04/2018.
+   Copyright (c) 2018 The Chromium Authors. All rights reserved.
+-->
+<plist version="1.0">
+    <dict>
+        <key>serverURL</key>
+        <string>https://cvicensa.us.demos.redhatmobile.com/api/v2/ag-push/</string>
+        <key>variantID</key>
+        <string>cbe22240-bfa7-4a53-a8c9-567cf797cfb6</string>
+        <key>variantSecret</key>
+        <string>0dbecdd8-ddf9-4922-8333-82b67c211ffb</string>
+    </dict>
+</plist>

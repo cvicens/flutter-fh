@@ -1,3 +1,3 @@
-## [0.0.1] - TODO: Add release date.
+## [0.6.1] - 2018-04-16
 
-* TODO: Describe initial release.
+* First published release, covers init, auth, cloud, getCloudUrl for Android and iOS

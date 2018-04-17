@@ -12,6 +12,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar;
 import com.feedhenry.sdk.FH;
 import com.feedhenry.sdk.FHActCallback;
 import com.feedhenry.sdk.FHResponse;
+import com.feedhenry.sdk.PushConfig;
 import com.feedhenry.sdk.api.FHAuthRequest;
 import com.feedhenry.sdk.api.FHCloudRequest;
 
@@ -21,6 +22,7 @@ import cz.msebera.android.httpclient.Header;
 import cz.msebera.android.httpclient.message.BasicHeader;
 
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -60,6 +62,10 @@ public class FhSdkPlugin implements MethodCallHandler {
         else if (call.method.equals("auth")) {
             this.handleAuthCall(call, result);
         }
+        // FH.pushRegister()
+        else if (call.method.equals("pushRegister")) {
+            this.handlePushRegisterCall(call, result);
+        }
         else {
             result.notImplemented();
         }
@@ -92,7 +98,7 @@ public class FhSdkPlugin implements MethodCallHandler {
     private void handleGetClourUrlCall (final Result result) {
         try {
             String cloudHost = FH.getCloudHost();
-            System.out.println("CLOUD_URL res ==> " + cloudHost);
+            System.out.println("CLOUD_URL cloudHost ==> " + cloudHost);
             result.success(cloudHost);
 
         } catch (Throwable e) {
@@ -207,4 +213,46 @@ public class FhSdkPlugin implements MethodCallHandler {
             result.error("CLOUD_ERROR", errorMessage, e.getCause());
         }
     }
+
+    private void handlePushRegisterCall (final MethodCall call, final Result result) {
+        HashMap arguments = (HashMap) call.arguments;
+
+        PushConfig config = null;
+        String alias = null;
+        ArrayList<String> categories = null;
+
+        try {
+            if (arguments != null) {
+                config = new PushConfig();
+                config.setAlias(arguments.containsKey("alias") ? (String) arguments.get("alias") : null);
+                config.setCategories(arguments.containsKey("categories") ? (ArrayList<String>) arguments.get("categories") : null);
+            }
+
+            FHActCallback callback = new FHActCallback() {
+                public void success(FHResponse res) {
+                    // Initialisation is now complete, you can now make FHActRequest's
+                    System.out.println("PUSH res.getRawResponse ==> " + res.getRawResponse());
+                    result.success(res.getRawResponse());
+                }
+
+                @Override
+                public void fail(FHResponse res) {
+                    String errorMessage = "Error: " + res.getRawResponse();
+                    System.out.println("pushRegister call exception. Response = " + res.getErrorMessage());
+                    result.error("PUSH_ERROR", errorMessage, res.getJson());
+                }
+            };
+            if (config != null) {
+                FH.pushRegister(config, callback);
+            } else {
+                FH.pushRegister(callback);
+            }
+        } catch (Throwable e) {
+            String errorMessage = "Exception: " + e.getMessage();
+            System.out.println("pushRegister call exception (check alias and categories types if in use). Response = " + errorMessage);
+            result.error("PUSH_ERROR", errorMessage, e.getCause());
+        }
+    }
+
+
 }

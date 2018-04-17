@@ -154,6 +154,32 @@ class _MyAppState extends State<MyApp> {
     });
   }
 
+  // Authentication test
+  pushRegister(String alias, List<String> categories) async {
+    dynamic data;
+    String message;
+
+    try {
+      data = await FhSdk.pushRegisterWithAliasAndCategories(alias, categories);
+      message = data.toString();
+      print('pushRegister data' + data.toString());
+    } on PlatformException catch (e, s) {
+      print('Exception details:\n $e');
+      print('Stack trace:\n $s');
+      message = 'Error calling hello';
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted)
+      return;
+
+    setState(() {
+      _messages = message;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final TextEditingController _controller = new TextEditingController();
@@ -217,6 +243,18 @@ class _MyAppState extends State<MyApp> {
                   // Perform some action
                   auth('popagame', 'trever', '123');
                   getCloudUrl();
+                }
+              )
+            ),
+            new Container(
+              padding: const EdgeInsets.all(32.0),
+              child: new RaisedButton(
+                child: new Text(_fhInit ? 'Register for push notifications' : 'Init in progress...'),
+                color: Theme.of(context).primaryColor,
+                textColor: Colors.white,
+                onPressed: !_fhInit ? null : () {
+                  // Perform some action
+                  pushRegister('trever', ['driver', 'employee']);
                 }
               )
             ),

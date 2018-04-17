@@ -5,13 +5,25 @@
 #import <FH/FH.h>
 #import <FH/FHResponse.h>
 
+NSString * const PushMessageReceived = @"push_message_received";
+NSString * const PushRegistrationSuccess = @"push_registration_success";
+NSString * const PushRegistrationError = @"push_registration_error";
+
+NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
+
 @implementation FhSdkPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
       methodChannelWithName:@"fh_sdk"
-            binaryMessenger:[registrar messenger]];
+      binaryMessenger:[registrar messenger]];
   FhSdkPlugin* instance = [[FhSdkPlugin alloc] init];
   [registrar addMethodCallDelegate: instance channel: channel];
+}
+
+// Remove the observer once the instance is deallocated.
+- (void)dealloc {
+    [self.channel setMethodCallHandler:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void)handleMethodCall:(FlutterMethodCall*)call result:(FlutterResult)result {
@@ -30,6 +42,10 @@
   // FH.auth()
   else if ([@"auth" isEqualToString:call.method]) {
     [self handleAuthCall: call result: result];
+  }
+  // FH.pushRegister()
+  else if ([@"pushRegister" isEqualToString:call.method]) {
+      [self handlePushRegisterCall: call result: result];
   }
   // Else...
   else {
@@ -88,73 +104,6 @@
   void (^success)(FHResponse *)=^(FHResponse * res) {
       NSLog(@"cloud call succeded");
       result(res.rawResponseAsString);
-  };
-  
-  void (^failure)(id)=^(FHResponse * res){
-      NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
-                               [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
-                               res.rawResponseAsString, @"rawResponseAsString", nil];
-      NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
-      NSLog(@"init call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
-      result([FlutterError errorWithCode:@"CLOUD_ERROR"
-                                 message:errorMessage
-                                 details:details]);
-  };
-  
-  @try {
-      NSString *path = nil, *method = nil, *contentType = nil;
-      NSNumber *timeout;
-      NSMutableDictionary *headers = [[NSMutableDictionary alloc] init];
-      NSMutableDictionary *data = [[NSMutableDictionary alloc] init];
-      if (options && [options valueForKey:@"path"]) path = [options valueForKey:@"path"];
-      if (options && [options valueForKey:@"method"]) method = [options valueForKey:@"method"];
-      if (options && [options valueForKey:@"contentType"]) {
-          contentType = [options valueForKey:@"contentType"];
-      } else {
-          contentType = @"application/json";
-      }
-      if (options && [options valueForKey:@"timeout"]) timeout = [options valueForKey:@"timeout"];
-      
-      if (options && [options valueForKey:@"headers"]) {
-          [headers addEntriesFromDictionary: (NSDictionary*)[options valueForKey:@"headers"]];
-      }
-      [headers setValue:contentType forKey:@"contentType"];
-      
-      if (options && [options valueForKey:@"data"]) {
-          [data addEntriesFromDictionary: (NSDictionary*)[options valueForKey:@"data"]];
-      }
-      
-      FHCloudRequest * action = (FHCloudRequest *) [FH buildCloudRequest:path
-                                                              WithMethod:method
-                                                              AndHeaders:headers
-                                                                  AndArgs:data];
-      
-      // change timeout (default value: 60s)
-      action.requestTimeout = 25.0;
-      [action execAsyncWithSuccess: success AndFailure: failure];
-  }
-  @catch ( NSException *e ) {
-      NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", [e reason]];
-      NSLog(@"cloud call exception. Response = %@", errorMessage);
-      result([FlutterError errorWithCode:@"CLOUD_ERROR"
-                                message:errorMessage
-                                details:nil]);
-  }
-  @finally {
-      NSLog(@"finally area reached");
-  }
-}
-
--(void)handleCloudCallParsed: (FlutterMethodCall*)call result:(FlutterResult)result {
-  NSDictionary *options = call.arguments;
-    
-  NSLog(@"%@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
-  NSLog(@"options: %@", options);
-  
-  // Call a cloud side function when init finishes
-  void (^success)(FHResponse *)=^(FHResponse * res) {
-      NSLog(@"cloud call succeded");
-      result(res.parsedResponse);
   };
   
   void (^failure)(id)=^(FHResponse * res){
@@ -283,77 +232,52 @@
     }
 }
 
--(void)handleAuthCallParsed: (FlutterMethodCall*)call result:(FlutterResult)result {
-    NSLog(@"auth call with promise %@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
-    NSDictionary *options = call.arguments;
+-(void)handlePushRegisterCall: (FlutterMethodCall*)call result:(FlutterResult)result {
+    NSLog(@"%@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
     
-    NSString *authPolicy = [options valueForKey:@"authPolicy"];
-    NSString *username = [options valueForKey:@"username"];
-    NSString *password = [options valueForKey:@"password"];
+    NSLog(@"pushRegister call %@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    NSDictionary *arguments = call.arguments;
     
+    NSString *alias = [arguments valueForKey:@"alias"];
+    NSArray *categories = [arguments valueForKey:@"categories"];
+    
+    if (!alias || !categories) {
+        NSString *errorMessage = @"Neither alias nor categories can be null (categories can be empty)";
+        NSLog(@"pushRegister call exception. %@", errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
+                                   message:@"Neither alias nor categories can be null (categories can be empty)"
+                                   details:nil]);
+    }
+        
     // Call a cloud side function when init finishes
     void (^success)(FHResponse *)=^(FHResponse * res) {
-        NSLog(@"auth call succeded check status");
-        NSDictionary *resData = res.parsedResponse;
+        // Listen to DeviceTokenNotification
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(pushMessageReceived:)
+                                                     name:PushMessageReceived
+                                                   object:nil];
         
-        NSLog(@"parsed response %@ type=%@",res.parsedResponse,[res.parsedResponse class]);
-        if ([res responseStatusCode] != 200) {
-            NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                     [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
-                                     res.rawResponseAsString, @"rawResponseAsString", nil];
-            NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
-            NSLog(@"auth call authentication failed. Status = %d Response = %@", res.responseStatusCode, errorMessage);
-            result([FlutterError errorWithCode:@"AUTH_ERROR"
-                                       message:errorMessage
-                                       details:details]);
-            
-        } else {
-            NSLog(@"auth call authentication succeded");
-            result(resData);
-        }
+        // Initialisation is now complete, you can now make FHActRequest's
+        NSLog(@"pushRegister call succeded");
+        result(@"SUCCESS");
     };
     
     void (^failure)(id)=^(FHResponse * res){
-        NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                 [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
-                                 res.rawResponseAsString, @"rawResponseAsString", nil];
         NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
-        NSLog(@"init call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
-        result([FlutterError errorWithCode:@"AUTH_ERROR"
+        NSLog(@"pushRegister call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
                                    message:errorMessage
-                                   details:details]);
+                                   details:res.parsedResponse]);
     };
     
-    @try {
-        
-        if (!authPolicy || !username || !password) {
-            NSString *errorMessage = [NSString stringWithFormat:@"Error authPolicy, username, password cannot empty"];
-            result([FlutterError errorWithCode:@"AUTH_ERROR"
-                                       message:errorMessage
-                                       details:nil]);
-            return;
-        }
-        
-        
-        NSLog(@"Policy: %@ username: %@", authPolicy, username);
-        
-        
-        FHAuthRequest* authRequest = [FH buildAuthRequest];
-        [authRequest authWithPolicyId:authPolicy UserId:username Password:password];
-        
-        [authRequest execAsyncWithSuccess:success AndFailure:failure];
-    }
-    @catch ( NSException *e ) {
-        NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", [e reason]];
-        NSLog(@"cloud call exception. Response = %@", errorMessage);
-        result([FlutterError errorWithCode:@"AUTH_ERROR"
-                                   message:errorMessage
-                                   details:nil]);
-        
-    }
-    @finally {
-        NSLog(@"finally area reached");
-    }
+    FHPushConfig *config = [[FHPushConfig alloc] init];
+    config.alias = alias;
+    config.categories = categories;
+    [FH pushRegister:nil withPushConfig:config andSuccess:success andFailure:failure];
+}
+
+-(void)pushMessageReceived:(NSNotification *)notification {
+    NSLog(@"%@ pushMessageReceived %@", NSStringFromClass([self class]), [notification description]);
 }
 
 @end
