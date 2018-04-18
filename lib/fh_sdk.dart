@@ -3,17 +3,17 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+typedef void NotificationHandler(MethodCall call);
+
 class FhSdk {
   static const MethodChannel _channel = const MethodChannel('fh_sdk');
 
   /// Initializes this plugin.
   /// Call this once before any further interaction with the the plugin.
-  static void initialize() {
+  static void initialize(NotificationHandler notificationHandler) {
     _channel.setMethodCallHandler((MethodCall call) {
-      assert(call.method != null);
-      if ('push_message_received' == call.method) {
-        print ('push_message_received ' + call.toString());
-      }
+      assert(call != null && call.method != null);
+      notificationHandler(call);
     });
   }
 

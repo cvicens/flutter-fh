@@ -51,13 +51,27 @@ class _MyAppState extends State<MyApp> {
     initFHState();
   }
 
+  // This method takes care of push notifications
+  void notificationHandler (MethodCall call) {
+    assert(call != null);
+    if ('push_message_received' == call.method) {
+        print ('push_message_received ' + call.toString());
+        if (call.arguments != null && call.arguments['userInfo'] != null) {
+          var userInfo = call.arguments['userInfo'];
+          showSnackBarMessage(userInfo['aps']['alert']['body']);
+        } else {
+          showSnackBarMessage(call.toString());
+        }
+      }
+  }
+
   // Initialize plugin
   initialize() async {
     String result;
     String message = 'Init plugin in progress...';
 
     try {
-      FhSdk.initialize();
+      FhSdk.initialize(notificationHandler);
       print('plugin channel ready');
       message = '';
     } on PlatformException catch (e) {
@@ -165,7 +179,7 @@ class _MyAppState extends State<MyApp> {
       data = await FhSdk.auth(authPolicy, username, password);
       message = 'Authentication success';
       showSnackBarMessage (message);
-      print('auth data' + message);
+      print('auth data' + data.toString());
     } catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
