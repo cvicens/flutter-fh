@@ -154,10 +154,12 @@ class _MyAppState extends State<MyApp> {
       data = await FhSdk.cloud(options);
       print('data ==> ' + data.toString());
       message = data.toString();
+      showSnackBarMessage(message);
     } on PlatformException catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
-      message = 'Error calling hello';
+      message = 'Error calling hello/';
+      showSnackBarMessage(message);
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -184,7 +186,6 @@ class _MyAppState extends State<MyApp> {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
       message = 'Authentication error';
-
       showSnackBarMessage (message);
     }
 
@@ -207,11 +208,13 @@ class _MyAppState extends State<MyApp> {
     try {
       data = await FhSdk.pushRegisterWithAliasAndCategories(alias, categories);
       message = data.toString();
+      showSnackBarMessage('Registered as: ' + alias + ' as ' + categories.toString());
       print('pushRegister data ' + data.toString());
     } on PlatformException catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
-      message = 'Error calling hello';
+      message = 'Error calling pushRegister';
+      showSnackBarMessage(message);
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -347,21 +350,6 @@ class _MyAppState extends State<MyApp> {
                               // Perform some action
                               pushRegister(_usernameFieldController.text, [_categoryFieldController.text]);
                       }
-                  )
-              ),
-              new Container(
-                  padding: const EdgeInsets.all(32.0),
-                  child: new Card(
-                    child: new Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: <Widget>[
-                        new ListTile(
-                          //leading: const Icon(Icons.album),
-                          title: const Text('Messages'),
-                          subtitle: new Text('$_messages'),
-                        )
-                      ],
-                    ),
                   )
               )
             ]);
