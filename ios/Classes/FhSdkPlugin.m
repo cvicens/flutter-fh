@@ -11,18 +11,23 @@ NSString * const PushRegistrationError = @"push_registration_error";
 
 NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
 
+@interface FhSdkPlugin ()
+@property(nonatomic, retain) FlutterMethodChannel *channel;
+@end
+
 @implementation FhSdkPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   FlutterMethodChannel* channel = [FlutterMethodChannel
       methodChannelWithName:@"fh_sdk"
       binaryMessenger:[registrar messenger]];
   FhSdkPlugin* instance = [[FhSdkPlugin alloc] init];
+  instance.channel = channel;
   [registrar addMethodCallDelegate: instance channel: channel];
 }
 
 // Remove the observer once the instance is deallocated.
 - (void)dealloc {
-    [self.channel setMethodCallHandler:nil];
+    //[self.channel setMethodCallHandler:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
@@ -46,6 +51,14 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
   // FH.pushRegister()
   else if ([@"pushRegister" isEqualToString:call.method]) {
       [self handlePushRegisterCall: call result: result];
+  }
+  // FH.setPushAlias()
+  else if ([@"setPushAlias" isEqualToString:call.method]) {
+      [self handleSetPushAliasCall: call result: result];
+  }
+  // FH.setPushCategories()
+  else if ([@"setPushCategories" isEqualToString:call.method]) {
+      [self handleSetPushCategoriesCall: call result: result];
   }
   // Else...
   else {
@@ -194,7 +207,7 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
                                  [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
                                  res.rawResponseAsString, @"rawResponseAsString", nil];
         NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
-        NSLog(@"init call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+        NSLog(@"auth call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
         result([FlutterError errorWithCode:@"AUTH_ERROR"
                                    message:errorMessage
                                    details:details]);
@@ -242,10 +255,10 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
     NSArray *categories = [arguments valueForKey:@"categories"];
     
     if (!alias || !categories) {
-        NSString *errorMessage = @"Neither alias nor categories can be null (categories can be empty)";
+        NSString *errorMessage = @"Neither alias nor categories can be null (categories can be empty though)";
         NSLog(@"pushRegister call exception. %@", errorMessage);
         result([FlutterError errorWithCode:@"PUSH_ERROR"
-                                   message:@"Neither alias nor categories can be null (categories can be empty)"
+                                   message:errorMessage
                                    details:nil]);
     }
         
@@ -278,6 +291,89 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
 
 -(void)pushMessageReceived:(NSNotification *)notification {
     NSLog(@"%@ pushMessageReceived %@", NSStringFromClass([self class]), [notification description]);
+    //[self.channel invokeMethod:@"push_message_received" arguments:[[notification userInfo] description]];
+    NSDictionary *arguments = @{ @"object" : notification.object, @"userInfo" : notification.userInfo };
+    [self.channel invokeMethod:@"push_message_received" arguments:arguments];
+}
+
+-(void)handleSetPushAliasCall: (FlutterMethodCall*)call result:(FlutterResult)result {
+    NSLog(@"%@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    
+    NSLog(@"setPushAlias call %@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    NSDictionary *arguments = call.arguments;
+    
+    NSString *alias = [arguments valueForKey:@"alias"];
+    
+    /*if (!alias) {
+        NSString *errorMessage = @"Alias cannot be null";
+        NSLog(@"setPushAlias call exception. %@", errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
+                                   message:errorMessage
+                                   details:nil]);
+    }*/
+    
+    // Call a cloud side function when init finishes
+    void (^success)(FHResponse *)=^(FHResponse * res) {
+        // Listen to DeviceTokenNotification
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(pushMessageReceived:)
+                                                     name:PushMessageReceived
+                                                   object:nil];
+        
+        // Initialisation is now complete, you can now make FHActRequest's
+        NSLog(@"setPushAlias call succeded");
+        result(@"SUCCESS");
+    };
+    
+    void (^failure)(id)=^(FHResponse * res){
+        NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
+        NSLog(@"setPushAlias call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
+                                   message:errorMessage
+                                   details:res.parsedResponse]);
+    };
+    
+    [FH setPushAlias:alias andSuccess:success andFailure:failure];
+}
+
+-(void)handleSetPushCategoriesCall: (FlutterMethodCall*)call result:(FlutterResult)result {
+    NSLog(@"%@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    
+    NSLog(@"setPushCategories call %@ %@", NSStringFromClass([self class]), NSStringFromSelector(_cmd));
+    NSDictionary *arguments = call.arguments;
+    
+    NSArray *categories = [arguments valueForKey:@"categories"];
+    
+    /*if (!categories) {
+        NSString *errorMessage = @"Categories cannot be null but can be empty";
+        NSLog(@"setPushCategories call exception. %@", errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
+                                   message:errorMessage
+                                   details:nil]);
+    }*/
+    
+    // Call a cloud side function when init finishes
+    void (^success)(FHResponse *)=^(FHResponse * res) {
+        // Listen to DeviceTokenNotification
+        [[NSNotificationCenter defaultCenter] addObserver:self
+                                                 selector:@selector(pushMessageReceived:)
+                                                     name:PushMessageReceived
+                                                   object:nil];
+        
+        // Initialisation is now complete, you can now make FHActRequest's
+        NSLog(@"setPushCategories call succeded");
+        result(@"SUCCESS");
+    };
+    
+    void (^failure)(id)=^(FHResponse * res){
+        NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
+        NSLog(@"setPushCategories call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);
+        result([FlutterError errorWithCode:@"PUSH_ERROR"
+                                   message:errorMessage
+                                   details:res.parsedResponse]);
+    };
+    
+    [FH setPushCategories:categories andSuccess:success andFailure:failure];
 }
 
 @end

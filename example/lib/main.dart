@@ -8,15 +8,15 @@ class TitleSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return new Container(
-      padding: const EdgeInsets.all(32.0),
+      padding: const EdgeInsets.fromLTRB(32.0, 24.0, 32.0, 24.0),
       child: new Row(
         children: [
           new Expanded(
             child: new Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
-                new Text('This is just and example Flutter app using the hello endpoint. Please, type something (your name for instance) and hit the button',
+                new Text(
+                  'This is just and example Flutter app using the hello endpoint. Please, type something (your name for instance) and hit the button',
                   style: new TextStyle(
                     color: Colors.grey[500],
                   ),
@@ -36,13 +36,43 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  // Change this to match your Authentication Policy on Red Hat Mobile if you plan to test authentication
+  static const String AUTH_POLICY = 'flutter';
+
+  BuildContext _context;
+
   bool _fhInit = false;
   String _messages = 'No messages';
 
   @override
   initState() {
     super.initState();
+    initialize();
     initFHState();
+  }
+
+  // Initialize plugin
+  initialize() async {
+    String result;
+    String message = 'Init plugin in progress...';
+
+    try {
+      FhSdk.initialize();
+      print('plugin channel ready');
+      message = '';
+    } on PlatformException catch (e) {
+      message = 'Error in plugin initialize method $e';
+    }
+
+    // If the widget was removed from the tree while the asynchronous platform
+    // message was in flight, we want to discard the reply rather than calling
+    // setState to update our non-existent appearance.
+    if (!mounted) return;
+
+    setState(() {
+      _fhInit = result != null && result.contains('SUCCESS') ? true : false;
+      _messages = message;
+    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -61,8 +91,7 @@ class _MyAppState extends State<MyApp> {
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted)
-      return;
+    if (!mounted) return;
 
     setState(() {
       _fhInit = result != null && result.contains('SUCCESS') ? true : false;
@@ -86,8 +115,7 @@ class _MyAppState extends State<MyApp> {
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted)
-      return;
+    if (!mounted) return;
 
     setState(() {
       _messages = message;
@@ -99,14 +127,15 @@ class _MyAppState extends State<MyApp> {
     dynamic data;
     String message;
 
-    String hello = (name == null || name.length <=0) ? 'world' : name;
+    String hello = (name == null || name.length <= 0) ? 'world' : name;
 
     try {
       Map options = {
         "path": "/hello?hello=" + hello.replaceAll(' ', ''),
         "method": "GET",
         "contentType": "application/json",
-        "timeout": 25000 // timeout value specified in milliseconds. Default: 60000 (60s)
+        "timeout":
+            25000 // timeout value specified in milliseconds. Default: 60000 (60s)
       };
       data = await FhSdk.cloud(options);
       print('data ==> ' + data.toString());
@@ -120,8 +149,7 @@ class _MyAppState extends State<MyApp> {
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted)
-      return;
+    if (!mounted) return;
 
     setState(() {
       _messages = message;
@@ -135,26 +163,29 @@ class _MyAppState extends State<MyApp> {
 
     try {
       data = await FhSdk.auth(authPolicy, username, password);
-      message = data['message'];
-      print('auth data' + data['message']);
-    } on PlatformException catch (e, s) {
+      message = 'Authentication success';
+      showSnackBarMessage (message);
+      print('auth data' + message);
+    } catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
-      message = 'Error calling hello';
+      message = 'Authentication error';
+
+      showSnackBarMessage (message);
     }
 
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted)
-      return;
+    if (!mounted) return;
 
     setState(() {
       _messages = message;
     });
   }
 
-  // Authentication test
+  // Registers for RH Mobile Push Notifications with alias and categories
+  // Both parameters, alias and categories cannot be null (categories can be empty though)
   pushRegister(String alias, List<String> categories) async {
     dynamic data;
     String message;
@@ -162,7 +193,7 @@ class _MyAppState extends State<MyApp> {
     try {
       data = await FhSdk.pushRegisterWithAliasAndCategories(alias, categories);
       message = data.toString();
-      print('pushRegister data' + data.toString());
+      print('pushRegister data ' + data.toString());
     } on PlatformException catch (e, s) {
       print('Exception details:\n $e');
       print('Stack trace:\n $s');
@@ -172,33 +203,71 @@ class _MyAppState extends State<MyApp> {
     // If the widget was removed from the tree while the asynchronous platform
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
-    if (!mounted)
-      return;
+    if (!mounted) return;
 
     setState(() {
       _messages = message;
     });
   }
 
+  void showSnackBarMessage(String message, [int duration = 3]) {
+    Scaffold.of(_context).showSnackBar(new SnackBar(
+      content: new Text(message),
+      duration: new Duration(seconds: duration),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final TextEditingController _controller = new TextEditingController();
+    final TextEditingController _nameFieldController = new TextEditingController();
+    final TextEditingController _usernameFieldController = new TextEditingController();
+    final TextEditingController _passwordFieldController = new TextEditingController();
+    final TextEditingController _categoryFieldController = new TextEditingController();
     TitleSection titleSection = new TitleSection();
     Container formSection = new Container(
-      padding: const EdgeInsets.all(28.0),
+      padding: const EdgeInsets.fromLTRB(20.0, 8.0, 20.0, 16.0),
       child: new Row(
         children: [
           new Expanded(
             child: new Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                //new TitleSection(),
+                new ListTile(
+                  leading: const Icon(Icons.person_outline),
+                  title: new TextField(
+                    controller: _nameFieldController,
+                    decoration: new InputDecoration(
+                      hintText: "Name",
+                    ),
+                  ),
+                ),
                 new ListTile(
                   leading: const Icon(Icons.person),
                   title: new TextField(
-                    controller: _controller,
+                    controller: _usernameFieldController,
+                    autocorrect: false,
                     decoration: new InputDecoration(
-                      hintText: "Name",
+                      hintText: "Username",
+                    ),
+                  ),
+                ),
+                new ListTile(
+                  leading: const Icon(Icons.vpn_key),
+                  title: new TextField(
+                    controller: _passwordFieldController,
+                    obscureText: true,
+                    autocorrect: false,
+                    decoration: new InputDecoration(
+                      hintText: "Password",
+                    ),
+                  ),
+                ),
+                new ListTile(
+                  leading: const Icon(Icons.category),
+                  title: new TextField(
+                    controller: _categoryFieldController,
+                    decoration: new InputDecoration(
+                      hintText: "Category",
                     ),
                   ),
                 )
@@ -211,71 +280,78 @@ class _MyAppState extends State<MyApp> {
 
     return new MaterialApp(
       home: new Scaffold(
-        appBar: new AppBar(
-          title: new Text('Red Hat MAP - Hello Test'),
-        ),
-        body: new ListView(
-          children: [ 
-            titleSection,
-            formSection,
-            const Divider(
-              height: 1.0,
-            ),
-            new Container(
-              padding: const EdgeInsets.all(32.0),
-              child: new RaisedButton(
-                child: new Text(_fhInit ? 'Say Hello' : 'Init in progress...'),
-                color: Theme.of(context).primaryColor,
-                textColor: Colors.white,
-                onPressed: !_fhInit ? null : () {
-                  // Perform some action
-                  sayHello(_controller.text);
-                }
+          appBar: new AppBar(
+            title: new Text('Red Hat MAP - Hello Test'),
+          ),
+          //floatingActionButton: new FloatingActionButton(
+          //  tooltip: 'Add', // used by assistive technologies
+          //  child: new Icon(Icons.add),
+          //  onPressed: null,
+          //),
+          body: new Builder(
+            // Create an inner BuildContext so that the onPressed methods
+            // can refer to the Scaffold with Scaffold.of().
+            builder: (BuildContext context) {
+              _context = context;
+              return new ListView(children: [
+              titleSection,
+              formSection,
+              const Divider(
+                height: 1.0,
+              ),
+              new Container(
+                  padding: const EdgeInsets.fromLTRB(32.0, 28.0, 32.0, 8.0),
+                  child: new RaisedButton(
+                      child: new Text(_fhInit ? 'Say Hello to Username' : 'Init in progress...'),
+                      color: Theme.of(context).primaryColor,
+                      textColor: Colors.white,
+                      onPressed: !_fhInit ? null : () {
+                              // Perform some action
+                              sayHello(_nameFieldController.text);
+                      }
+                  )
+              ),
+              new Container(
+                  padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 8.0),
+                  child: new RaisedButton(
+                      child: new Text(_fhInit ? 'Test auth' : 'Init in progress...'),
+                      color: Theme.of(context).primaryColor,
+                      textColor: Colors.white,
+                      onPressed: !_fhInit ? null : () {
+                              auth(AUTH_POLICY, _usernameFieldController.text,  _passwordFieldController.text);
+                              getCloudUrl();
+                      }
+                  )
+              ),
+              new Container(
+                  padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 8.0),
+                  child: new RaisedButton(
+                      child: new Text(_fhInit ? 'Register for push notifications' : 'Init in progress...'),
+                      color: Theme.of(context).primaryColor,
+                      textColor: Colors.white,
+                      onPressed: !_fhInit  ? null : () {
+                              // Perform some action
+                              pushRegister(_usernameFieldController.text, [_categoryFieldController.text]);
+                      }
+                  )
+              ),
+              new Container(
+                  padding: const EdgeInsets.all(32.0),
+                  child: new Card(
+                    child: new Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: <Widget>[
+                        new ListTile(
+                          //leading: const Icon(Icons.album),
+                          title: const Text('Messages'),
+                          subtitle: new Text('$_messages'),
+                        )
+                      ],
+                    ),
+                  )
               )
-            ),
-             new Container(
-              padding: const EdgeInsets.all(32.0),
-              child: new RaisedButton(
-                child: new Text(_fhInit ? 'Test auth' : 'Init in progress...'),
-                color: Theme.of(context).primaryColor,
-                textColor: Colors.white,
-                onPressed: !_fhInit ? null : () {
-                  // Perform some action
-                  auth('popagame', 'trever', '123');
-                  getCloudUrl();
-                }
-              )
-            ),
-            new Container(
-              padding: const EdgeInsets.all(32.0),
-              child: new RaisedButton(
-                child: new Text(_fhInit ? 'Register for push notifications' : 'Init in progress...'),
-                color: Theme.of(context).primaryColor,
-                textColor: Colors.white,
-                onPressed: !_fhInit ? null : () {
-                  // Perform some action
-                  pushRegister('trever', ['driver', 'employee']);
-                }
-              )
-            ),
-            new Container(
-              padding: const EdgeInsets.all(32.0),
-              child: new Card(
-                child: new Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    new ListTile(
-                      //leading: const Icon(Icons.album),
-                      title: const Text('Messages'),
-                      subtitle: new Text('$_messages'),
-                    )                    
-                  ],
-                ),
-              )
-            )
-          ]
-        ),
-      ),
+            ]);
+          })),
     );
   }
 }

@@ -139,7 +139,7 @@ didReceiveNotificationResponse:(UNNotificationResponse *)response
 
 - (void)pushNotificationHandler:(UIApplication *)application userInfo:(NSDictionary *)userInfo {
     // When a message is received, send NSNotification, will be handle by registered ViewController
-    NSNotification *notification = [NSNotification notificationWithName:@"push_message_received" object:[self pushMessageContent:userInfo]];
+    NSNotification *notification = [NSNotification notificationWithName:@"push_message_received" object:[self pushMessageContent:userInfo] userInfo:userInfo];
     [[NSNotificationCenter defaultCenter] postNotification:notification];
     NSLog(@"UPS message received: %@", userInfo);
     // Send metrics when the app is awaken from background due to push notification
