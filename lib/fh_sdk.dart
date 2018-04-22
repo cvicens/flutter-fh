@@ -8,7 +8,7 @@ typedef void NotificationHandler(MethodCall call);
 class FhSdk {
   static const MethodChannel _channel = const MethodChannel('fh_sdk');
 
-  /// Initializes this plugin.
+  /// This method initializes this plugin.
   /// Call this once before any further interaction with the the plugin.
   static void initialize(NotificationHandler notificationHandler) {
     _channel.setMethodCallHandler((MethodCall call) {
@@ -40,8 +40,8 @@ class FhSdk {
     return JSON.decode(result);
   }
 
-  // This function invokes an authentication policy given the policy name, username and password.
-  // Returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
+  /// This function invokes an authentication policy given the policy name, username and password.
+  /// Returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
   static Future<dynamic> auth (String authPolicy, String username, String password, [bool raw = false]) async {
      assert(authPolicy != null && username != null && password != null);
     
@@ -61,7 +61,7 @@ class FhSdk {
     return JSON.decode(result);
   }
 
-  // This method registers the client in the corresponding Push Notification server
+  /// This method registers the client in Red Hat Mobile push notifications server
   static Future<String> pushRegister ([bool raw = false]) {
     Completer completer = new Completer();
     _channel.invokeMethod('pushRegister').then((stringData) {
@@ -75,12 +75,12 @@ class FhSdk {
     return completer.future;
   }
 
-  // This method registers the client in the corresponding Push Notification server providing alias and categories
+  /// This method registers the client in the corresponding Push Notification server providing alias and categories
   static Future<String> pushRegisterWithAliasAndCategories (String alias, List<String> categories) => _channel.invokeMethod('pushRegister', {'alias': alias, 'categories': categories});
   
-  // This method set the alias used for push notifications
+  /// This method set the alias used for push notifications
   static Future<String> setPushAlias (String alias) => _channel.invokeMethod('setPushAlias', {'alias': alias});
 
-  // This method set the categories used for push notifications
+  /// This method set the categories used for push notifications
   static Future<String> setPushCategories (List<String> categories) => _channel.invokeMethod('setPushCategories', {'categories': categories});
 }

@@ -1,3 +1,7 @@
+## 0.6.4
+
+* Finxing documentation
+
 ## 0.6.3
 
 * Fixed error in Android that manifested surfacing authentication
