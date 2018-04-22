@@ -202,9 +202,13 @@ public class FhSdkPlugin implements MethodCallHandler {
 
                 @Override
                 public void fail(FHResponse res) {
+                    HashMap<String, String> details = new HashMap<>();
+                    // TODO: find if this is possible... it is in iOS
+                    //details.put("statusCode", "500");
+                    details.put("rawResponseAsString", res.getRawResponse());
                     String errorMessage = "Error: " + res.getRawResponse();
                     System.out.println("auth call exception. Response = " + res.getErrorMessage());
-                    result.error("AUTH_ERROR", errorMessage, res.getJson());
+                    result.error("AUTH_ERROR", errorMessage, details);
                 }
             });
         } catch (Throwable e) {

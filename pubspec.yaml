@@ -1,6 +1,6 @@
 name: fh_sdk
-description: nofficial flutter plugin for Red Hat Mobile
-version: 0.6.2
+description: Unofficial flutter plugin for Red Hat Mobile
+version: 0.6.3
 author: Carlos Vicens <carlos.vicens.alonso@gmail.com>
 homepage: https://github.com/cvicens/flutter-fh/tree/master/
 

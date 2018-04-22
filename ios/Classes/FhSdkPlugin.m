@@ -204,7 +204,7 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
     
     void (^failure)(id)=^(FHResponse * res){
         NSDictionary *details = [[NSDictionary alloc] initWithObjectsAndKeys:
-                                 [NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
+                                 //[NSNumber numberWithInt:res.responseStatusCode], @"statusCode",
                                  res.rawResponseAsString, @"rawResponseAsString", nil];
         NSString *errorMessage = [NSString stringWithFormat:@"Error: %@", res.rawResponseAsString];
         NSLog(@"auth call exception. Status = %d Response = %@", res.responseStatusCode, errorMessage);

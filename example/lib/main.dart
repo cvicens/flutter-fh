@@ -41,14 +41,13 @@ class _MyAppState extends State<MyApp> {
 
   BuildContext _context;
 
-  bool _fhInit = false;
-  String _messages = 'No messages';
+  bool _sdkInit = false;
 
   @override
   initState() {
     super.initState();
-    initialize();
-    initFHState();
+    initPlugin(); // Init plugin lowlevel
+    initSDK(); // Init Red Hat Mobile SDK
   }
 
   // This method takes care of push notifications
@@ -65,41 +64,35 @@ class _MyAppState extends State<MyApp> {
       }
   }
 
-  // Initialize plugin
-  initialize() async {
-    String result;
+  // Initialize plugin this allows us to receive push notification messages
+  initPlugin() async {
     String message = 'Init plugin in progress...';
 
     try {
       FhSdk.initialize(notificationHandler);
       print('plugin channel ready');
-      message = '';
+      message = 'Plugin channel ready';
+      showSnackBarMessage(message);
     } on PlatformException catch (e) {
       message = 'Error in plugin initialize method $e';
+      showSnackBarMessage(message);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _fhInit = result != null && result.contains('SUCCESS') ? true : false;
-      _messages = message;
-    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
-  initFHState() async {
+  initSDK() async {
     String result;
     String message = 'Init call running';
 
     try {
       result = await FhSdk.init();
-      print('initResult' + result);
+      print('init call ' + result);
       message = result.toString();
+      showSnackBarMessage(message);
+      getCloudUrl();
     } on PlatformException catch (e) {
       message = 'Error in FH Init $e';
+      showSnackBarMessage(message);
     }
 
     // If the widget was removed from the tree while the asynchronous platform
@@ -108,8 +101,7 @@ class _MyAppState extends State<MyApp> {
     if (!mounted) return;
 
     setState(() {
-      _fhInit = result != null && result.contains('SUCCESS') ? true : false;
-      _messages = message;
+      _sdkInit = result != null && result.contains('SUCCESS') ? true : false;
     });
   }
 
@@ -122,18 +114,11 @@ class _MyAppState extends State<MyApp> {
       result = await FhSdk.getCloudUrl();
       print('cloudHost' + result);
       message = result.toString();
+      showSnackBarMessage(message);
     } on PlatformException catch (e) {
       message = 'Error in FH getCloudUrl $e';
+      showSnackBarMessage(message);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _messages = message;
-    });
   }
 
   // Platform messages are asynchronous, so we initialize in an async method.
@@ -161,15 +146,6 @@ class _MyAppState extends State<MyApp> {
       message = 'Error calling hello/';
       showSnackBarMessage(message);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _messages = message;
-    });
   }
 
   // Authentication test
@@ -188,15 +164,6 @@ class _MyAppState extends State<MyApp> {
       message = 'Authentication error';
       showSnackBarMessage (message);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _messages = message;
-    });
   }
 
   // Registers for RH Mobile Push Notifications with alias and categories
@@ -216,15 +183,6 @@ class _MyAppState extends State<MyApp> {
       message = 'Error calling pushRegister';
       showSnackBarMessage(message);
     }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
-    setState(() {
-      _messages = message;
-    });
   }
 
   void showSnackBarMessage(String message, [int duration = 3]) {
@@ -319,10 +277,10 @@ class _MyAppState extends State<MyApp> {
               new Container(
                   padding: const EdgeInsets.fromLTRB(32.0, 28.0, 32.0, 8.0),
                   child: new RaisedButton(
-                      child: new Text(_fhInit ? 'Say Hello to Username' : 'Init in progress...'),
+                      child: new Text(_sdkInit ? 'Say Hello to Username' : 'Init in progress...'),
                       color: Theme.of(context).primaryColor,
                       textColor: Colors.white,
-                      onPressed: !_fhInit ? null : () {
+                      onPressed: !_sdkInit ? null : () {
                               // Perform some action
                               sayHello(_nameFieldController.text);
                       }
@@ -331,22 +289,21 @@ class _MyAppState extends State<MyApp> {
               new Container(
                   padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 8.0),
                   child: new RaisedButton(
-                      child: new Text(_fhInit ? 'Test auth' : 'Init in progress...'),
+                      child: new Text(_sdkInit ? 'Test auth' : 'Init in progress...'),
                       color: Theme.of(context).primaryColor,
                       textColor: Colors.white,
-                      onPressed: !_fhInit ? null : () {
+                      onPressed: !_sdkInit ? null : () {
                               auth(AUTH_POLICY, _usernameFieldController.text,  _passwordFieldController.text);
-                              getCloudUrl();
                       }
                   )
               ),
               new Container(
                   padding: const EdgeInsets.fromLTRB(32.0, 8.0, 32.0, 8.0),
                   child: new RaisedButton(
-                      child: new Text(_fhInit ? 'Register for push notifications' : 'Init in progress...'),
+                      child: new Text(_sdkInit ? 'Register for push notifications' : 'Init in progress...'),
                       color: Theme.of(context).primaryColor,
                       textColor: Colors.white,
-                      onPressed: !_fhInit  ? null : () {
+                      onPressed: !_sdkInit  ? null : () {
                               // Perform some action
                               pushRegister(_usernameFieldController.text, [_categoryFieldController.text]);
                       }
