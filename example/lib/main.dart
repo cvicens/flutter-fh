@@ -125,16 +125,15 @@ class _MyAppState extends State<MyApp> {
   sayHello(String name) async {
     dynamic data;
     String message;
-
+    
     String hello = (name == null || name.length <= 0) ? 'world' : name;
 
     try {
-      Map options = {
+      Map<String, dynamic> options = {
         "path": "/hello?hello=" + hello.replaceAll(' ', ''),
         "method": "GET",
         "contentType": "application/json",
-        "timeout":
-            25000 // timeout value specified in milliseconds. Default: 60000 (60s)
+        "timeout": 25000 // timeout value specified in milliseconds. Default: 60000 (60s)
       };
       data = await FhSdk.cloud(options);
       print('data ==> ' + data.toString());

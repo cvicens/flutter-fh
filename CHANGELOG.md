@@ -1,6 +1,10 @@
+## 0.6.5
+
+* Fixing annoying problem related to Future types
+
 ## 0.6.4
 
-* Finxing documentation
+* Fixing documentation
 
 ## 0.6.3
 

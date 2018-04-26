@@ -132,7 +132,7 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
   
   @try {
       NSString *path = nil, *method = nil, *contentType = nil;
-      NSNumber *timeout;
+      NSNumber *timeout = [NSNumber numberWithInteger:25000]; // 25 sec default
       NSMutableDictionary *headers = [[NSMutableDictionary alloc] init];
       NSMutableDictionary *data = [[NSMutableDictionary alloc] init];
       if (options && [options valueForKey:@"path"]) path = [options valueForKey:@"path"];
@@ -159,7 +159,7 @@ NSString * const DeviceTokenNotification = @"DeviceTokenNotification";
                                                                   AndArgs:data];
       
       // change timeout (default value: 60s)
-      action.requestTimeout = 25.0;
+      action.requestTimeout = [timeout doubleValue]/1000;
       [action execAsyncWithSuccess: success AndFailure: failure];
   }
   @catch ( NSException *e ) {

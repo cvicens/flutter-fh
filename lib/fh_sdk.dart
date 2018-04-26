@@ -18,14 +18,20 @@ class FhSdk {
   }
 
   /// This method initializes the FH SDK
-  static Future<String> init () => _channel.invokeMethod('init');
+  static Future<String> init () async { 
+    final String result = await _channel.invokeMethod('init');
+    return result;
+  }
 
   /// This function returns the actual Cloud App URL associated with the connection tag
-  static Future<String> getCloudUrl () => _channel.invokeMethod('getCloudUrl');
+  static Future<String> getCloudUrl () async { 
+    final String result = await _channel.invokeMethod('getCloudUrl');
+    return result;
+  }
 
   /// This function invokes a REST endpoint exposed in the Cloud App. Receives a Map of options: path, data, etc.
   /// Returns either a String if raw === true or a List (if Array) or Map (if JSON object) otherwise
-  static Future<dynamic> cloud (Map<String, String> options, [bool raw = false]) async {
+  static Future<dynamic> cloud (Map<String, dynamic> options, [bool raw = false]) async {
     assert(options != null);
 
     if (options['method'] == null || options['path'] == null) {
@@ -37,7 +43,7 @@ class FhSdk {
       return result;
     }
     
-    return JSON.decode(result);
+    return json.decode(result);
   }
 
   /// This function invokes an authentication policy given the policy name, username and password.
@@ -58,7 +64,7 @@ class FhSdk {
       return result;
     }
     
-    return JSON.decode(result);
+    return json.decode(result);
   }
 
   /// This method registers the client in Red Hat Mobile push notifications server
@@ -68,7 +74,7 @@ class FhSdk {
       if (raw) {
         completer.complete(stringData);
       } else {
-        completer.complete(JSON.decode(stringData));
+        completer.complete(json.decode(stringData));
       }
     });
 
@@ -76,11 +82,21 @@ class FhSdk {
   }
 
   /// This method registers the client in the corresponding Push Notification server providing alias and categories
-  static Future<String> pushRegisterWithAliasAndCategories (String alias, List<String> categories) => _channel.invokeMethod('pushRegister', {'alias': alias, 'categories': categories});
+  static Future<String> pushRegisterWithAliasAndCategories (String alias, List<String> categories) async {
+    String result = await _channel.invokeMethod('pushRegister', {'alias': alias, 'categories': categories});
+    return result;
+  }
   
   /// This method set the alias used for push notifications
-  static Future<String> setPushAlias (String alias) => _channel.invokeMethod('setPushAlias', {'alias': alias});
+  static Future<String> setPushAlias (String alias)  async {
+    String result = await _channel.invokeMethod('setPushAlias', {'alias': alias});
+    return result;
+  }
+  
 
   /// This method set the categories used for push notifications
-  static Future<String> setPushCategories (List<String> categories) => _channel.invokeMethod('setPushCategories', {'categories': categories});
+  static Future<String> setPushCategories (List<String> categories)  async {
+    String result = await _channel.invokeMethod('setPushCategories', {'categories': categories});
+    return result;
+  }
 }
