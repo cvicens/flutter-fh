@@ -169,7 +169,7 @@ public class FhSdkPlugin implements MethodCallHandler {
             });
         } catch (Throwable e) {
             String errorMessage = "Exception: " + e.getMessage();
-            System.out.println("init call exception. Response = " + errorMessage);
+            System.out.println("cloud call exception. Response = " + errorMessage);
             result.error("CLOUD_ERROR", errorMessage, e.getCause());
         }
     }

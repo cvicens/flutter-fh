@@ -1,3 +1,7 @@
+## 0.6.6
+
+* Fixing misleading log trace at cloud call handler in android
+
 ## 0.6.5
 
 * Fixing annoying problem related to Future types
